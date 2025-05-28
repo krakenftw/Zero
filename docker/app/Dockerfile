@@ -12,7 +12,7 @@ WORKDIR /app
 
 # Install turbo globally
 RUN npm install -g pnpm
-RUN pnpm install turbo
+RUN pnpm install -g turbo
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
 RUN mkdir -p apps packages
