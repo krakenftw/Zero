@@ -9,6 +9,7 @@ import {
   unique,
 } from 'drizzle-orm/pg-core';
 import { defaultUserSettings } from '../lib/schemas';
+import type { Shortcut } from '../lib/shortcuts';
 
 export const createTable = pgTableCreator((name) => `mail0_${name}`);
 

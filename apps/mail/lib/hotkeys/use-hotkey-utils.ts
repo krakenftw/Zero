@@ -1,49 +1,84 @@
 // TODO: Implement shortcuts syncing and caching
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type Shortcut, keyboardShortcuts } from '@/config/shortcuts';
+import { useTRPC } from '@/providers/query-provider';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { useCallback, useMemo } from 'react';
 
 export const useShortcutCache = (userId?: string) => {
-  // const { data: shortcuts, mutate } = useSWR<Shortcut[]>(
-  //   userId ? `/hotkeys/${userId}` : null,
-  //   () => axios.get('/api/v1/shortcuts').then((res) => res.data),
-  //   {
-  //     dedupingInterval: 24 * 60 * 60 * 1000,
-  //   },
-  // );
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const { data: shortcuts } = useQuery(trpc.shortcut.get.queryOptions());
 
-  // const updateShortcut = useCallback(
-  //   async (shortcut: Shortcut) => {
-  //     const currentShortcuts = shortcuts;
-  //     const index = currentShortcuts?.findIndex((s) => s.action === shortcut.action);
+  const { mutateAsync: updateShortcuts } = useMutation(trpc.shortcut.update.mutationOptions());
 
-  //     let newShortcuts: Shortcut[];
-  //     if (index >= 0) {
-  //       newShortcuts = [
-  //         ...currentShortcuts?.slice(0, index),
-  //         shortcut,
-  //         ...currentShortcuts?.slice(index + 1),
-  //       ];
-  //     } else {
-  //       newShortcuts = [...currentShortcuts, shortcut];
-  //     }
+  const overrideShortcuts = useCallback(() => {
+    return keyboardShortcuts.map((shortcut) => {
+      const overridedShortcut = shortcuts?.shortcuts?.shortcuts?.find(
+        (s) => s.action === shortcut.action,
+      );
+      if (overridedShortcut) {
+        return overridedShortcut;
+      }
+      return shortcut;
+    });
+  }, [shortcuts, keyboardShortcuts]);
 
-  //     try {
-  //       // Update server using server action
-  //       await updateShortcuts(newShortcuts);
-  //       // Update cache only after successful server update
-  //       await mutate(newShortcuts, false);
-  //     } catch (error) {
-  //       console.error('Error updating shortcuts:', error);
-  //       throw error;
-  //     }
-  //   },
-  //   [shortcuts, mutate],
-  // );
+  const resetShortcuts = useCallback(() => {
+    updateShortcuts(
+      { shortcuts: keyboardShortcuts },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: trpc.shortcut.get.queryKey() });
+        },
+      },
+    );
+  }, [updateShortcuts, keyboardShortcuts, queryClient, trpc.shortcut.get]);
+
+  const updateShortcut = useCallback(
+    async (shortcut: Shortcut) => {
+      const currentShortcuts = shortcuts?.shortcuts?.shortcuts;
+      const index = currentShortcuts?.findIndex((s) => s.action === shortcut.action);
+      let newShortcuts: Shortcut[];
+      if (index !== undefined && index >= 0) {
+        newShortcuts = [
+          ...(currentShortcuts?.slice(0, index) || []),
+          shortcut,
+          ...(currentShortcuts?.slice(index + 1) || []),
+        ];
+      } else {
+        newShortcuts = [...(currentShortcuts || []), shortcut];
+      }
+
+      // update the local cache immediately
+      queryClient.setQueryData(trpc.shortcut.get.queryKey(), (oldData: any) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          shortcuts: {
+            ...oldData.shortcuts,
+            shortcuts: newShortcuts,
+          },
+        };
+      });
+
+      try {
+        updateShortcuts({ shortcuts: newShortcuts });
+      } catch (error) {
+        // revert on error
+        console.error('Error updating shortcuts:', error);
+        queryClient.setQueryData(trpc.shortcut.get.queryKey(), shortcuts);
+        throw error;
+      }
+    },
+
+    [shortcuts, queryClient, updateShortcuts, trpc.shortcut.get],
+  );
 
   return {
-    shortcuts: keyboardShortcuts,
-    // updateShortcut,
+    shortcuts: overrideShortcuts(),
+    updateShortcut,
+    resetShortcuts,
   };
 };
 

@@ -24,6 +24,7 @@ import { defaultUserSettings } from './lib/schemas';
 import { createLocalJWKSet, jwtVerify } from 'jose';
 import { routePartykitRequest } from 'partyserver';
 import { enableBrainFunction } from './lib/brain';
+import type { Shortcut } from './lib/shortcuts';
 import { trpcServer } from '@hono/trpc-server';
 import { agentsMiddleware } from 'hono-agents';
 import { publicRouter } from './routes/auth';
@@ -180,10 +181,12 @@ class ZeroDB extends DurableObject {
     });
   }
 
-  async findUserHotkeys(userId: string): Promise<(typeof userHotkeys.$inferSelect)[]> {
-    return await this.db.query.userHotkeys.findMany({
+  async findUserHotkeys(
+    userId: string,
+  ): Promise<(typeof userHotkeys.$inferSelect & { shortcuts: Shortcut[] }) | undefined> {
+    return (await this.db.query.userHotkeys.findFirst({
       where: eq(userHotkeys.userId, userId),
-    });
+    })) as (typeof userHotkeys.$inferSelect & { shortcuts: Shortcut[] }) | undefined;
   }
 
   async insertUserHotkeys(userId: string, shortcuts: (typeof userHotkeys.$inferInsert)[]) {
