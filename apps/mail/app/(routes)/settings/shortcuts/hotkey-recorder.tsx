@@ -6,13 +6,15 @@ import { useTranslations } from 'use-intl';
 interface HotkeyRecorderProps {
   isOpen: boolean;
   onClose: () => void;
-  onHotkeyRecorded: (keys: string[]) => void;
+  action: string;
+  onHotkeyRecorded: (action: string, keys: string[]) => void;
   currentKeys: string[];
 }
 
 export function HotkeyRecorder({
   isOpen,
   onClose,
+  action,
   onHotkeyRecorded,
   currentKeys,
 }: HotkeyRecorderProps) {
@@ -41,7 +43,7 @@ export function HotkeyRecorder({
       if (isRecording) {
         setIsRecording(false);
         if (recordedKeys.length > 0) {
-          onHotkeyRecorded(recordedKeys);
+          onHotkeyRecorded(action, recordedKeys);
           onClose();
         }
       }

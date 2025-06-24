@@ -3,9 +3,9 @@ import { SettingsCard } from '@/components/settings/settings-card';
 import { formatDisplayKeys } from '@/lib/hotkeys/use-hotkey-utils';
 import { useShortcutStore } from '@/lib/hotkeys/use-hotkey-utils';
 import { useCategorySettings } from '@/hooks/use-categories';
-import { useState, type ReactNode, useEffect } from 'react';
 import type { MessageKey } from '@/config/navigation';
 import { HotkeyRecorder } from './hotkey-recorder';
+import { useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { useSession } from '@/lib/auth-client';
 import { useTranslations } from 'use-intl';
@@ -14,8 +14,29 @@ import { toast } from 'sonner';
 export default function ShortcutsPage() {
   const t = useTranslations();
   const { data: session } = useSession();
-  const { shortcuts, resetShortcuts } = useShortcutStore(session?.user?.id);
+  const { shortcuts, resetShortcuts, updateShortcut } = useShortcutStore(session?.user?.id);
   const categorySettings = useCategorySettings();
+  const [recordingAction, setRecordingAction] = useState<string | null>(null);
+
+  const handleHotkeyRecorded = async (action: string, newKeys: string[]) => {
+    try {
+      const originalShortcut = keyboardShortcuts.find((s) => s.action === action);
+      if (!originalShortcut) {
+        throw new Error('Original shortcut not found');
+      }
+
+      const updatedShortcut: Shortcut = {
+        ...originalShortcut,
+        keys: newKeys,
+      };
+
+      await updateShortcut(updatedShortcut);
+      toast.success('Shortcut saved successfully');
+    } catch (error) {
+      console.error('Failed to save shortcut:', error);
+      toast.error('Failed to save shortcut');
+    }
+  };
 
   return (
     <div className="grid gap-6">
@@ -76,7 +97,7 @@ export default function ShortcutsPage() {
                     <Shortcut
                       key={`${scope}-${index}`}
                       keys={shortcut.keys}
-                      action={shortcut.action}
+                      setIsRecording={() => setRecordingAction(shortcut.action)}
                     >
                       {label}
                     </Shortcut>
@@ -87,6 +108,13 @@ export default function ShortcutsPage() {
           ))}
         </div>
       </SettingsCard>
+      <HotkeyRecorder
+        isOpen={!!recordingAction}
+        onClose={() => setRecordingAction(null)}
+        action={recordingAction!}
+        onHotkeyRecorded={handleHotkeyRecorded}
+        currentKeys={[]}
+      />
     </div>
   );
 }
@@ -94,36 +122,13 @@ export default function ShortcutsPage() {
 function Shortcut({
   children,
   keys,
-  action,
+  setIsRecording,
 }: {
   children: ReactNode;
   keys: string[];
-  action: string;
+  setIsRecording: (isRecording: boolean) => void;
 }) {
-  const [isRecording, setIsRecording] = useState(false);
   const displayKeys = formatDisplayKeys(keys);
-  const { data: session } = useSession();
-  const { updateShortcut } = useShortcutStore(session?.user?.id);
-
-  const handleHotkeyRecorded = async (newKeys: string[]) => {
-    try {
-      const originalShortcut = keyboardShortcuts.find((s) => s.action === action);
-      if (!originalShortcut) {
-        throw new Error('Original shortcut not found');
-      }
-
-      const updatedShortcut: Shortcut = {
-        ...originalShortcut,
-        keys: newKeys,
-      };
-
-      await updateShortcut(updatedShortcut);
-      toast.success('Shortcut saved successfully');
-    } catch (error) {
-      console.error('Failed to save shortcut:', error);
-      toast.error('Failed to save shortcut');
-    }
-  };
 
   return (
     <>
@@ -145,12 +150,6 @@ function Shortcut({
           ))}
         </div>
       </div>
-      <HotkeyRecorder
-        isOpen={isRecording}
-        onClose={() => setIsRecording(false)}
-        onHotkeyRecorded={handleHotkeyRecorded}
-        currentKeys={keys}
-      />
     </>
   );
 }
