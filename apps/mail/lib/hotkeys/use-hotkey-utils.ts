@@ -15,10 +15,9 @@ export const useShortcutStore = (userId?: string) => {
   const { mutateAsync: pruneShortcuts } = useMutation(trpc.shortcut.prune.mutationOptions());
 
   const overrideShortcuts = useCallback(() => {
+    const userShortcuts = shortcuts?.shortcuts?.shortcuts ?? [];
     return keyboardShortcuts.map((shortcut) => {
-      const overridedShortcut = shortcuts?.shortcuts?.shortcuts?.find(
-        (s) => s.action === shortcut.action,
-      );
+      const overridedShortcut = userShortcuts.find((s) => s.action === shortcut.action);
       if (overridedShortcut) {
         return overridedShortcut;
       }
@@ -34,11 +33,11 @@ export const useShortcutStore = (userId?: string) => {
       console.error('Error resetting shortcuts:', error);
       throw error;
     }
-  }, [updateShortcuts, keyboardShortcuts, queryClient, trpc.shortcut.get]);
+  }, [pruneShortcuts, queryClient, trpc.shortcut.get]);
 
   const updateShortcut = useCallback(
     async (shortcut: Shortcut) => {
-      const currentShortcuts = shortcuts?.shortcuts?.shortcuts;
+      const currentShortcuts = shortcuts?.shortcuts?.shortcuts ?? [];
       const index = currentShortcuts?.findIndex((s) => s.action === shortcut.action);
       let newShortcuts: Shortcut[];
       if (index !== undefined && index >= 0) {

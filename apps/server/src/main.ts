@@ -181,12 +181,10 @@ class ZeroDB extends DurableObject {
     });
   }
 
-  async findUserHotkeys(
-    userId: string,
-  ): Promise<(typeof userHotkeys.$inferSelect & { shortcuts: Shortcut[] }) | undefined> {
-    return (await this.db.query.userHotkeys.findFirst({
+  async findUserHotkeys(userId: string): Promise<typeof userHotkeys.$inferSelect | undefined> {
+    return await this.db.query.userHotkeys.findFirst({
       where: eq(userHotkeys.userId, userId),
-    })) as (typeof userHotkeys.$inferSelect & { shortcuts: Shortcut[] }) | undefined;
+    });
   }
 
   async insertUserHotkeys(userId: string, shortcuts: (typeof userHotkeys.$inferInsert)[]) {
