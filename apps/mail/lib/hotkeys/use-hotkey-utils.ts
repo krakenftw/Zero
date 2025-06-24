@@ -5,14 +5,22 @@ import { useTRPC } from '@/providers/query-provider';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { useCallback, useMemo } from 'react';
 
-export const useShortcutStore = (userId?: string) => {
+export const useShortcutStore = () => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const { data: shortcuts } = useQuery(trpc.shortcut.get.queryOptions());
 
-  const { mutateAsync: updateShortcuts } = useMutation(trpc.shortcut.update.mutationOptions());
+  const {
+    mutateAsync: updateShortcuts,
+    isPending: isUpdating,
+    error: updateError,
+  } = useMutation(trpc.shortcut.update.mutationOptions());
 
-  const { mutateAsync: pruneShortcuts } = useMutation(trpc.shortcut.prune.mutationOptions());
+  const {
+    mutateAsync: pruneShortcuts,
+    isPending: isPruning,
+    error: pruneError,
+  } = useMutation(trpc.shortcut.prune.mutationOptions());
 
   const overrideShortcuts = useCallback(() => {
     const userShortcuts = shortcuts?.shortcuts?.shortcuts ?? [];
@@ -79,6 +87,10 @@ export const useShortcutStore = (userId?: string) => {
     shortcuts: overrideShortcuts(),
     updateShortcut,
     resetShortcuts,
+    isUpdating,
+    isPruning,
+    updateError,
+    pruneError,
   };
 };
 

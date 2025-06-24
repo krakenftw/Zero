@@ -187,7 +187,7 @@ class ZeroDB extends DurableObject {
     });
   }
 
-  async insertUserHotkeys(userId: string, shortcuts: (typeof userHotkeys.$inferInsert)[]) {
+  async insertUserHotkeys(userId: string, shortcuts: Shortcut[]) {
     return await this.db
       .insert(userHotkeys)
       .values({
