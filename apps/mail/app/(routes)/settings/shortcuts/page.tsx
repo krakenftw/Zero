@@ -3,9 +3,9 @@ import { SettingsCard } from '@/components/settings/settings-card';
 import { formatDisplayKeys } from '@/lib/hotkeys/use-hotkey-utils';
 import { useShortcutStore } from '@/lib/hotkeys/use-hotkey-utils';
 import { useCategorySettings } from '@/hooks/use-categories';
-import { useState, type ReactNode, useEffect } from 'react';
 import type { MessageKey } from '@/config/navigation';
 import { HotkeyRecorder } from './hotkey-recorder';
+import { useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { useSession } from '@/lib/auth-client';
 import { useTranslations } from 'use-intl';
@@ -13,8 +13,7 @@ import { toast } from 'sonner';
 
 export default function ShortcutsPage() {
   const t = useTranslations();
-  const { data: session } = useSession();
-  const { shortcuts, resetShortcuts } = useShortcutStore(session?.user?.id);
+  const { shortcuts, resetShortcuts, isPruning } = useShortcutStore();
   const categorySettings = useCategorySettings();
 
   return (
@@ -26,6 +25,7 @@ export default function ShortcutsPage() {
           <div className="flex gap-4">
             <Button
               variant="outline"
+              disabled={isPruning}
               onClick={() => {
                 resetShortcuts();
                 toast.success('Shortcuts reset to defaults');
@@ -102,8 +102,7 @@ function Shortcut({
 }) {
   const [isRecording, setIsRecording] = useState(false);
   const displayKeys = formatDisplayKeys(keys);
-  const { data: session } = useSession();
-  const { updateShortcut } = useShortcutStore(session?.user?.id);
+  const { updateShortcut } = useShortcutStore();
 
   const handleHotkeyRecorded = async (newKeys: string[]) => {
     try {

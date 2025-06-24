@@ -23,7 +23,7 @@ export const shortcutRouter = router({
       const { sessionUser } = ctx;
       const { shortcuts } = input;
       const db = getZeroDB(sessionUser.id);
-      await db.insertUserHotkeys(sessionUser.id, shortcuts as any);
+      await db.insertUserHotkeys(sessionUser.id, shortcuts);
     }),
   prune: privateProcedure.mutation(async ({ ctx }) => {
     const { sessionUser } = ctx;
