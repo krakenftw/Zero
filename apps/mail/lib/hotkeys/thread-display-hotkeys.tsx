@@ -1,9 +1,8 @@
 import { mailNavigationCommandAtom } from '@/hooks/use-mail-navigation';
-import { useThread, useThreads } from '@/hooks/use-threads';
-import { keyboardShortcuts } from '@/config/shortcuts';
+import { useShortcuts, useShortcutStore } from './use-hotkey-utils';
 import useMoveTo from '@/hooks/driver/use-move-to';
 import useDelete from '@/hooks/driver/use-delete';
-import { useShortcuts } from './use-hotkey-utils';
+import { useThread } from '@/hooks/use-threads';
 import { useParams } from 'react-router';
 import { useQueryState } from 'nuqs';
 import { useSetAtom } from 'jotai';
@@ -24,6 +23,7 @@ export function ThreadDisplayHotkeys() {
   const { mutate: deleteThread } = useDelete();
   const { mutate: moveTo } = useMoveTo();
   const setMailNavigationCommand = useSetAtom(mailNavigationCommandAtom);
+  const { shortcuts } = useShortcutStore();
 
   const handlers = {
     closeView: () => closeView(new KeyboardEvent('keydown', { key: 'Escape' })),
@@ -55,7 +55,7 @@ export function ThreadDisplayHotkeys() {
     },
   };
 
-  const threadDisplayShortcuts = keyboardShortcuts.filter((shortcut) => shortcut.scope === scope);
+  const threadDisplayShortcuts = shortcuts.filter((shortcut) => shortcut.scope === scope);
 
   useShortcuts(threadDisplayShortcuts, handlers, { scope });
 

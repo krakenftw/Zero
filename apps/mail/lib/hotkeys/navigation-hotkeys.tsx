@@ -1,10 +1,11 @@
-import { keyboardShortcuts } from '@/config/shortcuts';
-import { useShortcuts } from './use-hotkey-utils';
+import { useShortcuts, useShortcutStore } from './use-hotkey-utils';
 import { useNavigate } from 'react-router';
 
 export function NavigationHotkeys() {
   const navigate = useNavigate();
   const scope = 'navigation';
+
+  const { shortcuts } = useShortcutStore();
 
   const handlers = {
     goToDrafts: () => navigate('/mail/draft'),
@@ -16,7 +17,7 @@ export function NavigationHotkeys() {
     helpWithShortcuts: () => navigate('/settings/shortcuts'),
   };
 
-  const globalShortcuts = keyboardShortcuts.filter((shortcut) => shortcut.scope === scope);
+  const globalShortcuts = shortcuts.filter((shortcut) => shortcut.scope === scope);
 
   useShortcuts(globalShortcuts, handlers, { scope });
 
