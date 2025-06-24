@@ -5,12 +5,14 @@ import { useTRPC } from '@/providers/query-provider';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { useCallback, useMemo } from 'react';
 
-export const useShortcutCache = (userId?: string) => {
+export const useShortcutStore = (userId?: string) => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const { data: shortcuts } = useQuery(trpc.shortcut.get.queryOptions());
 
   const { mutateAsync: updateShortcuts } = useMutation(trpc.shortcut.update.mutationOptions());
+
+  const { mutateAsync: pruneShortcuts } = useMutation(trpc.shortcut.prune.mutationOptions());
 
   const overrideShortcuts = useCallback(() => {
     return keyboardShortcuts.map((shortcut) => {
@@ -24,15 +26,14 @@ export const useShortcutCache = (userId?: string) => {
     });
   }, [shortcuts, keyboardShortcuts]);
 
-  const resetShortcuts = useCallback(() => {
-    updateShortcuts(
-      { shortcuts: keyboardShortcuts },
-      {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: trpc.shortcut.get.queryKey() });
-        },
-      },
-    );
+  const resetShortcuts = useCallback(async () => {
+    try {
+      await pruneShortcuts();
+      queryClient.invalidateQueries({ queryKey: trpc.shortcut.get.queryKey() });
+    } catch (error) {
+      console.error('Error resetting shortcuts:', error);
+      throw error;
+    }
   }, [updateShortcuts, keyboardShortcuts, queryClient, trpc.shortcut.get]);
 
   const updateShortcut = useCallback(
@@ -63,7 +64,7 @@ export const useShortcutCache = (userId?: string) => {
       });
 
       try {
-        updateShortcuts({ shortcuts: newShortcuts });
+        await updateShortcuts({ shortcuts: newShortcuts });
       } catch (error) {
         // revert on error
         console.error('Error updating shortcuts:', error);
@@ -140,8 +141,7 @@ export const formatKeys = (keys: string[] | undefined): string => {
   if (!keys || !keys.length) return '';
 
   const mapKey = (key: string) => {
-    const lowerKey = key.toLowerCase();
-    const mappedKey = isDvorak ? qwertyToDvorak[lowerKey] || key : key;
+    const mappedKey = isDvorak ? qwertyToDvorak[key] || key : key;
 
     switch (mappedKey) {
       case 'mod':
@@ -153,7 +153,7 @@ export const formatKeys = (keys: string[] | undefined): string => {
       case '!':
         return 'shift+1';
       default:
-        return mappedKey;
+        return mappedKey.toLowerCase();
     }
   };
 

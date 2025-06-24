@@ -25,4 +25,9 @@ export const shortcutRouter = router({
       const db = getZeroDB(sessionUser.id);
       await db.insertUserHotkeys(sessionUser.id, shortcuts as any);
     }),
+  prune: privateProcedure.mutation(async ({ ctx }) => {
+    const { sessionUser } = ctx;
+    const db = getZeroDB(sessionUser.id);
+    await db.pruneUserHotkeys(sessionUser.id);
+  }),
 });

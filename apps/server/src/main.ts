@@ -207,6 +207,10 @@ class ZeroDB extends DurableObject {
       });
   }
 
+  async pruneUserHotkeys(userId: string) {
+    return await this.db.delete(userHotkeys).where(eq(userHotkeys.userId, userId));
+  }
+
   async insertUserSettings(userId: string, settings: typeof defaultUserSettings) {
     return await this.db.insert(userSettings).values({
       id: crypto.randomUUID(),
