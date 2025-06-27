@@ -26,9 +26,14 @@ export default function ShortcutsPage() {
             <Button
               variant="outline"
               disabled={isPruning}
-              onClick={() => {
-                resetShortcuts();
-                toast.success('Shortcuts reset to defaults');
+              onClick={async () => {
+                try {
+                  await resetShortcuts();
+                  toast.success('Shortcuts reset to defaults');
+                } catch (error) {
+                  console.error('Failed to reset shortcuts:', error);
+                  toast.error('Failed to reset shortcuts');
+                }
               }}
             >
               {t('common.actions.resetToDefaults')}

@@ -152,7 +152,7 @@ export const formatKeys = (keys: string[] | undefined): string => {
   if (!keys || !keys.length) return '';
 
   const mapKey = (key: string) => {
-    const mappedKey = isDvorak ? qwertyToDvorak[key] || key : key;
+    const mappedKey = isDvorak ? qwertyToDvorak[key.toLowerCase()] || key : key;
 
     switch (mappedKey) {
       case 'mod':
